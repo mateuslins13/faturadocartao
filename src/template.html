@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise e Controle de Fatura de Cartão de Crédito</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-card: #161b22;
+    --bg-card-2: #1c2230;
+    --border: #262d3a;
+    --txt: #e6edf3;
+    --txt-dim: #8b949e;
+    --accent: #4a9eff;
+    --accent-2: #1f6feb;
+    --good: #3fb950;
+    --warn: #d29922;
+    --bad: #f85149;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.35);
+  }
+  [data-theme="light"] {
+    --bg: #f4f6fa;
+    --bg-card: #ffffff;
+    --bg-card-2: #f7f9fc;
+    --border: #dfe4ec;
+    --txt: #1a202c;
+    --txt-dim: #5f6b7c;
+    --accent: #1f6feb;
+    --shadow: 0 1px 3px rgba(16,24,40,.08);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--txt);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    transition: background .2s, color .2s;
+  }
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 20px clamp(12px, 3vw, 28px) 64px; }
+
+  /* ---------- Header ---------- */
+  header.top {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    align-items: flex-end; justify-content: space-between;
+    padding: 18px 0 20px;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .brand-mark {
+    width: 46px; height: 46px; flex: none; border-radius: 10px;
+    background: linear-gradient(135deg, #1f6feb, #4a9eff 60%, #59d0ff);
+    display: grid; place-items: center;
+    font-size: 22px; color: #fff;
+    box-shadow: 0 4px 14px rgba(31,111,235,.35);
+  }
+  .brand h1 { margin: 0; font-size: clamp(16px, 2.2vw, 21px); font-weight: 650; letter-spacing: -.3px; }
+  .brand p { margin: 2px 0 0; color: var(--txt-dim); font-size: 12.5px; }
+  .top-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+  button, .btn, select, input[type="text"], input[type="password"] {
+    font: inherit; font-size: 13.5px; color: var(--txt);
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 9px; padding: 8px 13px; cursor: pointer;
+    transition: border-color .15s, background .15s, transform .05s;
+  }
+  input[type="text"], input[type="password"], select { cursor: auto; }
+  button:hover, .btn:hover { border-color: var(--accent); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  button[disabled], .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--accent-2); border-color: var(--accent-2); color: #fff; font-weight: 600;
+  }
+  .btn-primary:hover { background: #2a7cf7; border-color: #2a7cf7; }
+  .btn-sm { font-size: 12.5px; padding: 5px 10px; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  /* ---------- Painel de fontes (pasta + senha) ---------- */
+  #fontes {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-card); box-shadow: var(--shadow);
+    padding: 16px 18px; margin-bottom: 18px;
+  }
+  #fontes.over { border-color: var(--accent); background: rgba(74,158,255,.07); }
+  .fontes-head {
+    display: flex; flex-wrap: wrap; gap: 10px 14px;
+    align-items: baseline; justify-content: space-between; margin-bottom: 13px;
+  }
+  .fontes-head h2 { margin: 0; font-size: 14.5px; font-weight: 650; }
+  .fontes-head .hint { font-size: 12px; color: var(--txt-dim); }
+  .pasta-path {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px; color: var(--txt-dim);
+    word-break: break-all;
+  }
+  .fontes-ctrl {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding-bottom: 13px; margin-bottom: 13px; border-bottom: 1px solid var(--border);
+  }
+  .fld { display: flex; flex-direction: column; gap: 4px; }
+  .fld > span { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--txt-dim); font-weight: 600; }
+  .fld input { width: 150px; }
+  .grow { flex: 1 1 auto; }
+
+  .arq-list { display: flex; flex-direction: column; gap: 6px; }
+  .arq {
+    display: flex; flex-wrap: wrap; gap: 6px 11px; align-items: center;
+    padding: 8px 11px; border-radius: 9px;
+    background: var(--bg-card-2); border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .arq .nm {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; min-width: 0; overflow-wrap: anywhere;
+  }
+  .arq .sz { color: var(--txt-dim); font-size: 11.5px; white-space: nowrap; }
+  .arq .push { margin-left: auto; }
+  .st {
+    display: inline-block; padding: 2px 9px; border-radius: 100px;
+    font-size: 11px; font-weight: 650; white-space: nowrap; border: 1px solid transparent;
+  }
+  .st.ok   { background: rgba(63,185,80,.14);  color: var(--good); border-color: rgba(63,185,80,.34); }
+  .st.err  { background: rgba(248,81,73,.14);  color: var(--bad);  border-color: rgba(248,81,73,.34); }
+  .st.wait { background: rgba(210,153,34,.14); color: var(--warn); border-color: rgba(210,153,34,.34); }
+  .st.load { background: rgba(74,158,255,.14); color: var(--accent); border-color: rgba(74,158,255,.34); }
+  .arq .msg { font-size: 11.5px; color: var(--txt-dim); overflow-wrap: anywhere; }
+  .btn-x {
+    background: transparent; border: 1px solid var(--border); color: var(--txt-dim);
+    border-radius: 7px; padding: 3px 8px; font-size: 12px; line-height: 1.3;
+  }
+  .btn-x:hover { border-color: var(--bad); color: var(--bad); }
+
+  #status { font-size: 13px; margin-bottom: 16px; display: none; padding: 11px 14px; border-radius: 9px; }
+  #status.show { display: block; }
+  #status.ok { background: rgba(63,185,80,.12); color: var(--good); border: 1px solid rgba(63,185,80,.3); }
+  #status.err { background: rgba(248,81,73,.12); color: var(--bad); border: 1px solid rgba(248,81,73,.3); }
+  #status.info { background: rgba(74,158,255,.1); color: var(--accent); border: 1px solid rgba(74,158,255,.28); }
+
+  /* ---------- Estado vazio ---------- */
+  #vazio {
+    border: 1.5px dashed var(--border); border-radius: var(--radius);
+    background: var(--bg-card); padding: clamp(26px, 5vw, 46px) clamp(18px, 4vw, 40px);
+    text-align: center;
+  }
+  #vazio .ico { font-size: 42px; line-height: 1; margin-bottom: 14px; }
+  #vazio h2 { margin: 0 0 8px; font-size: clamp(17px, 2.4vw, 21px); font-weight: 650; }
+  #vazio p { margin: 0 auto 18px; max-width: 620px; color: var(--txt-dim); font-size: 13.5px; }
+  #vazio ol {
+    max-width: 560px; margin: 0 auto; padding: 0; list-style: none;
+    text-align: left; display: flex; flex-direction: column; gap: 10px;
+  }
+  #vazio ol li {
+    display: flex; gap: 11px; align-items: flex-start;
+    font-size: 13.5px; color: var(--txt-dim);
+  }
+  #vazio ol li b { color: var(--txt); font-weight: 600; }
+  #vazio ol li i {
+    flex: none; width: 22px; height: 22px; border-radius: 100px;
+    background: var(--bg-card-2); border: 1px solid var(--border);
+    display: grid; place-items: center; font-style: normal;
+    font-size: 11.5px; font-weight: 700; color: var(--accent);
+  }
+  #vazio code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px; background: var(--bg-card-2);
+    border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px;
+  }
+
+  /* ---------- KPIs ---------- */
+  .kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); margin-bottom: 22px; }
+  .kpi {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 15px 17px; box-shadow: var(--shadow);
+  }
+  .kpi .lbl {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--txt-dim); font-weight: 600; margin-bottom: 7px;
+  }
+  .kpi .val { font-size: clamp(19px, 2.6vw, 25px); font-weight: 680; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 12px; color: var(--txt-dim); margin-top: 4px; }
+  .kpi.hl { border-color: rgba(74,158,255,.4); background: linear-gradient(160deg, rgba(74,158,255,.09), transparent 70%), var(--bg-card); }
+  .up { color: var(--bad); } .down { color: var(--good); }
+
+  /* ---------- Cards / charts ---------- */
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); margin-bottom: 16px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 17px 19px 19px; box-shadow: var(--shadow); min-width: 0;
+  }
+  .card.span-2 { grid-column: 1 / -1; }
+  .card-head {
+    display: flex; flex-wrap: wrap; gap: 10px 14px;
+    align-items: baseline; justify-content: space-between; margin-bottom: 14px;
+  }
+  .card-head h2 { margin: 0; font-size: 14.5px; font-weight: 650; letter-spacing: -.2px; }
+  .card-head .hint { font-size: 12px; color: var(--txt-dim); }
+  .chart-box { position: relative; height: 320px; }
+  .chart-box.tall { height: 360px; }
+  @media (max-width: 640px) { .chart-box, .chart-box.tall { height: 290px; } }
+
+  /* ---------- Tabela ---------- */
+  .tbl-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .tbl-tools input[type="text"] { min-width: 190px; flex: 1 1 190px; max-width: 320px; }
+  .tbl-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 720px; }
+  thead th {
+    background: var(--bg-card-2); text-align: left; padding: 11px 13px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--txt-dim); font-weight: 700; white-space: nowrap;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1;
+  }
+  thead th.sortable { cursor: pointer; user-select: none; }
+  thead th.sortable:hover { color: var(--accent); }
+  thead th .arw { opacity: .45; font-size: 9px; margin-left: 3px; }
+  tbody td { padding: 10px 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:nth-child(even) { background: rgba(255,255,255,.017); }
+  [data-theme="light"] tbody tr:nth-child(even) { background: rgba(16,24,40,.022); }
+  tbody tr:hover { background: rgba(74,158,255,.07); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .estab { font-weight: 550; }
+  .tag {
+    display: inline-block; padding: 2.5px 9px; border-radius: 100px;
+    font-size: 11px; font-weight: 620; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .pill {
+    display: inline-block; min-width: 48px; text-align: center;
+    padding: 2.5px 8px; border-radius: 6px; font-size: 11.5px; font-weight: 650;
+    background: var(--bg-card-2); border: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .pill.last { background: rgba(63,185,80,.15); border-color: rgba(63,185,80,.35); color: var(--good); }
+  .bar-mini { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; min-width: 54px; }
+  .bar-mini > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  tfoot td {
+    padding: 12px 13px; font-weight: 700; background: var(--bg-card-2);
+    border-top: 2px solid var(--border); font-variant-numeric: tabular-nums;
+  }
+  .empty { padding: 34px 16px; text-align: center; color: var(--txt-dim); font-size: 13.5px; }
+  footer.foot { margin-top: 30px; text-align: center; color: var(--txt-dim); font-size: 12px; line-height: 1.7; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 12px; padding: 5px 11px; border-radius: 100px;
+    border: 1px solid var(--border); background: var(--bg-card); cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--accent-2); border-color: var(--accent-2); color: #fff; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">💳</div>
+      <div>
+        <h1>Análise e Controle de Fatura de Cartão de Crédito</h1>
+        <p id="periodo-info">Nenhuma fatura carregada</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button id="btn-theme" type="button" title="Alternar tema claro/escuro">🌓 Tema</button>
+      <button id="btn-export" type="button" title="Baixar dados consolidados em CSV">⭳ CSV</button>
+      <button id="btn-reload" type="button" title="Reler os PDFs da pasta">↻ Reprocessar</button>
+    </div>
+  </header>
+
+  <section id="fontes" aria-label="Faturas em PDF">
+    <div class="fontes-head">
+      <h2 id="fontes-titulo">Faturas em PDF</h2>
+      <span class="hint pasta-path" id="pasta-info"></span>
+    </div>
+
+    <div class="fontes-ctrl">
+      <label class="fld">
+        <span>Senha dos PDFs</span>
+        <input type="password" id="pdf-pass" autocomplete="off" spellcheck="false"
+               placeholder="deixe vazio se não tiver" title="Senha de abertura dos PDFs">
+      </label>
+      <label class="fld">
+        <span>&nbsp;</span>
+        <span>
+          <input type="file" id="pdf-input" accept="application/pdf,.pdf" multiple class="sr-only">
+          <label for="pdf-input" class="btn btn-primary">+ Adicionar PDFs</label>
+        </span>
+      </label>
+      <span class="grow"></span>
+      <span class="hint" id="ctrl-hint"></span>
+    </div>
+
+    <div class="arq-list" id="arq-list"></div>
+  </section>
+
+  <div id="status" role="status" aria-live="polite"></div>
+
+  <section id="vazio">
+    <div class="ico" aria-hidden="true">📄</div>
+    <h2>Comece adicionando suas faturas</h2>
+    <p>
+      Os PDFs são lidos e processados dentro do seu navegador. Nada é enviado para a internet,
+      e nenhum dado seu vai para o repositório.
+    </p>
+    <ol>
+      <li><i>1</i><span>Coloque os PDFs das faturas na pasta <code id="vazio-pasta">faturas/</code>, ou use o botão <b>+ Adicionar PDFs</b> acima.</span></li>
+      <li><i>2</i><span>Se os arquivos forem protegidos, digite a <b>senha de abertura</b> no campo acima.</span></li>
+      <li><i>3</i><span>Clique em <b>↻ Reprocessar</b>. Os gráficos e tabelas aparecem automaticamente.</span></li>
+    </ol>
+  </section>
+
+  <div id="conteudo" hidden>
+    <section class="kpis" id="kpis" aria-label="Indicadores gerais"></section>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-head">
+          <h2>Fatura por mês</h2>
+          <span class="hint">total fechado de cada fatura</span>
+        </div>
+        <div class="chart-box"><canvas id="ch-meses"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Gastos por tipo de compra</h2>
+          <select id="sel-mes" aria-label="Selecionar período do gráfico de categorias"></select>
+        </div>
+        <div class="chart-box"><canvas id="ch-cat"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card span-2" style="margin-bottom:16px">
+      <div class="card-head">
+        <h2>Parcelamentos nas faturas futuras</h2>
+        <span class="hint" id="hint-proj"></span>
+      </div>
+      <div class="chart-box tall"><canvas id="ch-parc"></canvas></div>
+    </div>
+
+    <div class="card span-2">
+      <div class="card-head">
+        <h2>Compras parceladas em aberto</h2>
+        <span class="hint" id="hint-tbl"></span>
+      </div>
+      <div class="tbl-tools">
+        <label class="sr-only" for="busca">Buscar estabelecimento</label>
+        <input type="text" id="busca" placeholder="Buscar estabelecimento…">
+        <div class="chips" id="chips-cat" role="group" aria-label="Filtrar por categoria"></div>
+      </div>
+      <div class="tbl-scroll">
+        <table id="tbl-parc">
+          <thead>
+            <tr>
+              <th class="sortable" data-k="data">Data <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="estabelecimento">Estabelecimento <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="categoria">Categoria <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="parcelaAtual">Parcela <span class="arw">▲▼</span></th>
+              <th>Progresso</th>
+              <th class="sortable num" data-k="valor">Valor/mês <span class="arw">▲▼</span></th>
+              <th class="sortable num" data-k="restante">Saldo a pagar <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="quitacaoOrd">Quita em <span class="arw">▲▼</span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="card span-2" style="margin-top:16px">
+      <div class="card-head">
+        <h2>Todos os lançamentos</h2>
+        <span class="hint" id="hint-lanc"></span>
+      </div>
+      <div class="tbl-tools">
+        <label class="sr-only" for="busca-l">Buscar lançamento</label>
+        <input type="text" id="busca-l" placeholder="Buscar estabelecimento…">
+        <select id="sel-mes-l" aria-label="Selecionar fatura dos lançamentos"></select>
+        <select id="sel-cat-l" aria-label="Filtrar por categoria"></select>
+      </div>
+      <div class="tbl-scroll">
+        <table id="tbl-lanc">
+          <thead>
+            <tr>
+              <th class="sortable" data-k="fatura">Fatura <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="data">Data <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="estabelecimento">Estabelecimento <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="categoria">Categoria <span class="arw">▲▼</span></th>
+              <th class="sortable" data-k="parcelaAtual">Parcela <span class="arw">▲▼</span></th>
+              <th class="sortable num" data-k="valor">Valor <span class="arw">▲▼</span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    Os PDFs são lidos localmente, dentro do navegador. Nada é enviado para a internet.<br>
+    <span id="foot-info"></span>
+  </footer>
+</div>
+
+<script src="__CHARTJS__"></script>
+<script src="__PDFJS__"></script>
+<script>window.__PDF_WORKER_B64__ = "__WORKER_B64__";</script>
+<script src="__APP__"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Faturas e qualquer dado pessoal nunca vão para o repositório.
+# Ignora o conteúdo da pasta, mas mantém a pasta no repositório.
+# (excluir "faturas/" inteiro impediria reincluir o .gitkeep)
+faturas/*
+!faturas/.gitkeep
+*.pdf
+*.csv
+dados.json
+raw/
+
+# Build gerado localmente (recriado com: npm run build)
+index.html
+
+node_modules/
+shot-*.png
+.DS_Store
+Thumbs.db

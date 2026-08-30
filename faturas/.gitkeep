@@ -1,0 +1,5 @@
+Coloque nesta pasta os PDFs das faturas do cartão.
+
+O conteúdo é ignorado pelo Git (veja .gitignore), então seus dados
+não vão para o repositório. Somente este arquivo é versionado, apenas
+para que a pasta exista após o clone.

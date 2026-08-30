@@ -1,0 +1,22 @@
+{
+  "name": "analise-fatura-cartao",
+  "version": "2.0.0",
+  "description": "Painel local para analisar faturas de cartão de crédito em PDF. Os dados nunca saem da máquina.",
+  "type": "commonjs",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node server.mjs",
+    "dev": "node build.mjs && node server.mjs"
+  },
+  "keywords": ["fatura", "cartao-de-credito", "dashboard", "pdf", "financas"],
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "4.4.3",
+    "pdfjs-dist": "4.6.82",
+    "pdfjs-dist-legacy": "npm:pdfjs-dist@3.11.174"
+  },
+  "devDependencies": {
+    "playwright": "1.47.2"
+  }
+}
