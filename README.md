@@ -9,6 +9,16 @@ enviado para a internet, e nada de pessoal fica no repositório.
 
 ## Como usar
 
+### Pela web (GitHub Pages)
+
+O painel é compilado e publicado automaticamente no GitHub Pages a cada push na
+branch `main` (via `.github/workflows/pages.yml`), sem nenhum dado pessoal.
+Basta abrir a página, clicar em **+ Adicionar PDFs** (ou arrastar os arquivos)
+e informar a senha dos PDFs, se houver. Os arquivos são processados
+exclusivamente na memória do seu navegador e valem para a sessão atual.
+
+### Localmente (com pasta `faturas/`)
+
 ```bash
 npm install
 npm run build

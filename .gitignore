@@ -10,6 +10,7 @@ raw/
 
 # Build gerado localmente (recriado com: npm run build)
 index.html
+_site/
 
 node_modules/
 shot-*.png

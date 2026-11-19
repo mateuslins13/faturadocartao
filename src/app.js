@@ -772,8 +772,12 @@
    */
   async function reprocessar() {
     if (processando) return;
-    status('Relendo a pasta…', 'info');
-    await sincronizarPasta();
+    if (temServidor) {
+      status('Relendo a pasta…', 'info');
+      await sincronizarPasta();
+    } else {
+      status('Reprocessando arquivos…', 'info');
+    }
     for (const a of arquivos) {
       a.estado = 'pendente';
       a.msg = '';
@@ -908,9 +912,13 @@
     renderTudo();
 
     if (!comServidor) {
-      $('#ctrl-hint').textContent = 'sem servidor local — use "+ Adicionar PDFs"';
-      status('Aberto como arquivo local: não consigo ler a pasta faturas/. '
-        + 'Use "+ Adicionar PDFs" (vale só nesta sessão) ou rode "npm start" para ler a pasta.', 'info');
+      if (location.protocol === 'file:') {
+        $('#ctrl-hint').textContent = 'sem servidor local — use "+ Adicionar PDFs"';
+        status('Aberto como arquivo local: não consigo ler a pasta faturas/. '
+          + 'Use "+ Adicionar PDFs" (vale só nesta sessão) ou rode "npm start" para ler a pasta.', 'info');
+      } else {
+        $('#ctrl-hint').textContent = 'processamento 100% local no navegador — arraste ou clique em "+ Adicionar PDFs"';
+      }
       return;
     }
     if (arquivos.length) await processarPendentes();
